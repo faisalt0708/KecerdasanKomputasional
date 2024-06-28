@@ -1,12 +1,3 @@
-import subprocess
-import sys
-
-# Pastikan openpyxl terinstal
-try:
-    import openpyxl
-except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "openpyxl"])
-
 import streamlit as st
 import pandas as pd
 from sklearn_extra.cluster import KMedoids
@@ -32,14 +23,11 @@ def show_data():
             st.session_state.uploaded_files.append(uploaded_file)
             st.session_state.upload_count += 1
 
-            try:
-                # Baca data Excel
-                df = pd.read_excel(uploaded_file, sheet_name='Daftar Peserta Didik')
+            # Baca data Excel
+            df = pd.read_excel(uploaded_file, sheet_name='Daftar Peserta Didik')
 
-                # Simpan DataFrame ke dalam session state
-                st.session_state[f'data_{st.session_state.upload_count}'] = df
-            except Exception as e:
-                st.error(f"Gagal membaca file Excel: {e}")
+            # Simpan DataFrame ke dalam session state
+            st.session_state[f'data_{st.session_state.upload_count}'] = df
 
     else:
         st.write("Anda telah mengunggah maksimal 3 file.")
@@ -64,16 +52,16 @@ def show_kategorial():
         # Ambil file pertama dari daftar yang diunggah
         uploaded_file = st.session_state.uploaded_files[0]
 
-        try:
-            # Baca data Kategorial dari file yang diunggah
-            df_kategorial = pd.read_excel(uploaded_file, sheet_name='kategorial')
+        # Baca data Kategorial dari file yang diunggah
+        df_kategorial = pd.read_excel(uploaded_file, sheet_name='kategorial')
 
-            # Tampilkan data Kategorial
-            st.write("Data Kategorial dari Excel:")
-            st.dataframe(df_kategorial)
-        except Exception as e:
-            st.error(f"Gagal membaca file Excel: {e}")
+        # Tampilkan data Kategorial
+        st.write("Data Kategorial dari Excel:")
+        st.dataframe(df_kategorial)
 
+        # Opsional: Tampilkan informasi statistik ringkas
+        # st.write("Informasi statistik ringkas:")
+        # st.write(df_kategorial.describe())
     else:
         st.write("Silakan unggah file Excel terlebih dahulu di menu Data.")
 
@@ -86,53 +74,50 @@ def show_perhitungan():
         # Ambil file pertama dari daftar yang diunggah
         uploaded_file = st.session_state.uploaded_files[0]
 
-        try:
-            # Baca data Perhitungan dari file yang diunggah
-            df_perhitungan = pd.read_excel(uploaded_file, sheet_name='number')
+        # Baca data Perhitungan dari file yang diunggah
+        df_perhitungan = pd.read_excel(uploaded_file, sheet_name='number')
 
-            # Tampilkan data Perhitungan
-            st.write("Data Perhitungan dari Excel:")
-            st.dataframe(df_perhitungan)
+        # Tampilkan data Perhitungan
+        st.write("Data Perhitungan dari Excel:")
+        st.dataframe(df_perhitungan)
 
-            # Hapus kolom yang tidak relevan atau tidak dapat diproses
-            columns_to_drop = []  # Tambahkan nama kolom yang ingin dihapus
-            df_perhitungan = df_perhitungan.drop(columns=columns_to_drop)
+        # Hapus kolom yang tidak relevan atau tidak dapat diproses
+        columns_to_drop = []  # Tambahkan nama kolom yang ingin dihapus
+        df_perhitungan = df_perhitungan.drop(columns=columns_to_drop)
 
-            # Lakukan penanganan nilai NaN
-            if df_perhitungan.isnull().values.any():
-                st.warning("Data mengandung nilai NaN. Melakukan penggantian NaN dengan nilai rata-rata kolom.")
-                
-                # Ganti NaN dengan nilai rata-rata kolom
-                df_perhitungan = df_perhitungan.fillna(df_perhitungan.mean())
+        # Lakukan penanganan nilai NaN
+        if df_perhitungan.isnull().values.any():
+            st.warning("Data mengandung nilai NaN. Melakukan penggantian NaN dengan nilai rata-rata kolom.")
+            
+            # Ganti NaN dengan nilai rata-rata kolom
+            df_perhitungan = df_perhitungan.fillna(df_perhitungan.mean())
 
-            # Cek tipe data kolom dan konversi jika perlu
-            for column in df_perhitungan.columns:
-                if df_perhitungan[column].dtype == 'object':
-                    df_perhitungan[column] = pd.to_numeric(df_perhitungan[column], errors='coerce')
+        # Cek tipe data kolom dan konversi jika perlu
+        for column in df_perhitungan.columns:
+            if df_perhitungan[column].dtype == 'object':
+                df_perhitungan[column] = pd.to_numeric(df_perhitungan[column], errors='coerce')
 
-            # Input untuk menentukan jumlah cluster
-            n_clusters = st.slider('Pilih jumlah cluster', min_value=2, max_value=10, value=3)
+        # Input untuk menentukan jumlah cluster
+        n_clusters = st.slider('Pilih jumlah cluster', min_value=2, max_value=10, value=3)
 
-            if st.button('Lakukan Perhitungan K-Medoids'):
-                try:
-                    # Lakukan clustering menggunakan K-Medoids
-                    kmedoids = KMedoids(n_clusters=n_clusters, random_state=0)
-                    labels = kmedoids.fit_predict(df_perhitungan)
+        if st.button('Lakukan Perhitungan K-Medoids'):
+            try:
+                # Lakukan clustering menggunakan K-Medoids
+                kmedoids = KMedoids(n_clusters=n_clusters, random_state=0)
+                labels = kmedoids.fit_predict(df_perhitungan)
 
-                    # Tambahkan label cluster ke DataFrame
-                    df_perhitungan['Cluster'] = labels
+                # Tambahkan label cluster ke DataFrame
+                df_perhitungan['Cluster'] = labels
 
-                    # Tampilkan hasil clustering
-                    st.write("Hasil Clustering:")
-                    st.dataframe(df_perhitungan)
+                # Tampilkan hasil clustering
+                st.write("Hasil Clustering:")
+                st.dataframe(df_perhitungan)
 
-                    # Plot hasil clustering
-                    plot_clusters(df_perhitungan, kmedoids)
+                # Plot hasil clustering
+                plot_clusters(df_perhitungan, kmedoids)
 
-                except ValueError as e:
-                    st.error(f"Terjadi kesalahan saat melakukan clustering: {str(e)}")
-        except Exception as e:
-            st.error(f"Gagal membaca file Excel: {e}")
+            except ValueError as e:
+                st.error(f"Terjadi kesalahan saat melakukan clustering: {str(e)}")
 
     else:
         st.write("Silakan unggah file Excel terlebih dahulu di menu Data.")
