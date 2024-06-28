@@ -1,9 +1,3 @@
-import subprocess
-import sys
-
-# Pastikan openpyxl terinstal
-subprocess.check_call([sys.executable, "-m", "pip", "install", "openpyxl"])
-
 import streamlit as st
 import pandas as pd
 from sklearn_extra.cluster import KMedoids
